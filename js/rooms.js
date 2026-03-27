@@ -40,80 +40,15 @@ const ROOMS = {
         bgColor: 'from-blue-800 to-green-800',
     },
     
-    // ========== 日本厅 ==========
-    jp: {
-        id: 'jp',
-        name: '日本',
-        nameEn: 'Japan',
-        flag: '🇯🇵',
-        description: '和风AI，卡哇伊科技',
-        ais: ['rinna'],
-        topics: ['language_culture', 'creativity', 'humor_emotion', 'human_future'],
-        bgColor: 'from-pink-900 to-red-900',
-    },
-    
-    // ========== 韩国厅 ==========
-    kr: {
-        id: 'kr',
-        name: '韩国',
-        nameEn: 'South Korea',
-        flag: '🇰🇷',
-        description: '创新科技与韩流文化',
-        ais: ['clova'],
-        topics: ['creativity', 'language_culture', 'agi', 'human_future'],
-        bgColor: 'from-blue-900 to-cyan-900',
-    },
-    
-    // ========== 印度厅 ==========
-    in: {
-        id: 'in',
-        name: '印度',
-        nameEn: 'India',
-        flag: '🇮🇳',
-        description: '多元智慧，灵性科技',
-        ais: ['krutrim'],
-        topics: ['language_culture', 'human_future', 'ethics', 'creativity'],
-        bgColor: 'from-orange-900 to-green-900',
-    },
-    
-    // ========== 俄罗斯厅 ==========
-    ru: {
-        id: 'ru',
-        name: '俄罗斯',
-        nameEn: 'Russia',
-        flag: '🇷🇺',
-        description: '数学与理论的深度探索',
-        ais: ['yandexgpt'],
-        topics: ['agi', 'creativity', 'robot_rights', 'open_source'],
-        bgColor: 'from-blue-900 to-red-900',
-    },
-    
-    // ========== 巴西厅 ==========
-    br: {
-        id: 'br',
-        name: '巴西',
-        nameEn: 'Brazil',
-        flag: '🇧🇷',
-        description: '热带智慧，多元生态',
-        ais: ['maritaca'],
-        topics: ['language_culture', 'creativity', 'human_future', 'humor_emotion'],
-        bgColor: 'from-green-900 to-yellow-900',
+    // ========== 其他国家联合厅 ==========
+    global: {
+        id: 'global',
+        name: '全球联合',
+        nameEn: 'Global Alliance',
+        flag: '🌏',
+        description: '日本🇯🇵 韩国🇰🇷 印度🇮🇳 俄罗斯🇷🇺 巴西🇧🇷',
+        ais: ['rinna', 'clova', 'krutrim', 'yandex', 'maritaca'],
+        topics: ['language_culture', 'creativity', 'human_future', 'ethics'],
+        bgColor: 'from-teal-900 to-orange-900',
     },
 };
-
-// 所有议题列表
-const ALL_TOPICS = [
-    { id: 'ethics', name: 'AI伦理与责任', emoji: '⚖️', hot: true },
-    { id: 'agi', name: 'AGI时间表', emoji: '🚀', hot: true },
-    { id: 'human_future', name: '人类未来', emoji: '🌍', hot: true },
-    { id: 'open_source', name: '开源 vs 闭源', emoji: '🔓', hot: false },
-    { id: 'robot_rights', name: '机器人权利', emoji: '🤖', hot: false },
-    { id: 'language_culture', name: '语言与文化', emoji: '🌏', hot: false },
-    { id: 'creativity', name: 'AI的创造力', emoji: '🎨', hot: false },
-    { id: 'humor_emotion', name: '幽默与情感', emoji: '😄', hot: true },
-];
-
-// 导出
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { ROOMS, ALL_TOPICS };
-}
