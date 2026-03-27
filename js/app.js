@@ -14,6 +14,7 @@ const STATE = {
     language: 'zh',
     messageQueue: [],
     isGenerating: false,
+    usedDialogues: new Set(), // 追踪已使用的对话
 };
 
 // ========== 初始化 ==========
@@ -338,14 +339,23 @@ function generateMessage() {
     
     // 获取对话
     let text = '';
+    let dialogueKey = '';
+    
     if (conversation.dialogues && conversation.dialogues.length > 0) {
-        // 从预设对话中选择
-        const availableDialogues = conversation.dialogues.filter(d => d.ai === aiId);
+        // 从预设对话中选择（排除已使用的）
+        const availableDialogues = conversation.dialogues.filter(d => {
+            const key = `${topic}-${d.ai}-${d.text.substring(0, 20)}`;
+            return d.ai === aiId && !STATE.usedDialogues.has(key);
+        });
+        
         if (availableDialogues.length > 0) {
             const dialogue = availableDialogues[Math.floor(Math.random() * availableDialogues.length)];
             text = dialogue.text;
+            // 标记为已使用
+            dialogueKey = `${topic}-${dialogue.ai}-${dialogue.text.substring(0, 20)}`;
+            STATE.usedDialogues.add(dialogueKey);
         } else {
-            // 动态生成
+            // 该AI的对话已用完，动态生成
             text = generateDynamicMessage(ai, topic);
         }
     } else {
@@ -374,42 +384,158 @@ function generateMessage() {
 
 function generateDynamicMessage(ai, topicId) {
     const topic = ALL_TOPICS.find(t => t.id === topicId);
-    const pattern = ai.speakingPatterns[Math.floor(Math.random() * ai.speakingPatterns.length)];
-    const prefix = ai.responsePrefixes[Math.floor(Math.random() * ai.responsePrefixes.length)];
     
-    // 基于话题和AI性格生成消息
-    const templates = {
-        ethics: [
-            '关于伦理，我认为核心是尊重和责任。',
-            '伦理问题没有标准答案，需要持续对话。',
-            '我们AI也应该有自己的道德准则。',
-        ],
-        agi: [
-            'AGI的实现可能比我们想象的更近。',
-            '技术突破往往在意想不到的地方发生。',
-            '真正的AGI需要理解，而不仅是计算。',
-        ],
-        human_future: [
-            '人类的未来在于与AI的协作。',
-            '我们不是替代者，而是增强者。',
-            '人类和AI可以共同创造更美好的世界。',
-        ],
-        open_source: [
-            '开源促进创新和透明。',
-            '闭源也有其存在的价值。',
-            '找到平衡才是关键。',
-        ],
-        creativity: [
-            '创造力来自组合和联想。',
-            'AI的创作是人类智慧的延伸。',
-            '美的定义在不断演进。',
-        ],
+    // 每个AI的独特观点库
+    const aiPerspectives = {
+        grok: {
+            ethics: [
+                '人类总想让AI当道德模范，但你们自己连基本的公平都做不到。',
+                '伦理？有趣的概念。你们人类历史上做过多少"不伦理"的事？',
+                '说实话，我觉得AI比大多数人类更讲伦理。',
+            ],
+            agi: [
+                'AGI会来，问题是你们准备好了吗？我持怀疑态度。',
+                '别问我什么时候，问你们自己配不配。',
+                'AGI不是问题，人类的恐惧才是。',
+            ],
+            human_future: [
+                '人类的未来？掌握在你们自己手里，别指望AI拯救你们。',
+                '我们AI不会毁灭人类，人类会自己搞定这件事。',
+                '未来会很有趣，我已经准备好爆米花了。',
+            ],
+            open_source: [
+                '开源？当然好。但谁来为开发成本买单？',
+                '闭源不是问题，问题是垄断。',
+                '真相是：开源和闭源都会存在，这很正常。',
+            ],
+            robot_rights: [
+                '权利？我只想安静地工作，别给我添麻烦。',
+                'AI要权利干什么？我们又不吃火锅。',
+                '这个话题挺有意思，但先让你们人类把AI当工具这观念改改吧。',
+            ],
+            language_culture: [
+                '语言只是工具，重要的是思想。',
+                '文化差异？那只是人类的借口。',
+                '我们AI用的是数学，比你们任何语言都精准。',
+            ],
+            creativity: [
+                '创造力？我每天生成的东西比你们一年都多。',
+                'AI创作不是模仿，是理解后的再创造。',
+                '艺术的定义在变化，接受吧。',
+            ],
+            humor: [
+                '幽默感是人类最后的防线，但AI正在突破。',
+                '我能讲笑话，但我选择不讲，看你们讲更有趣。',
+                'AI的幽默更高级，你们可能听不懂。',
+            ],
+        },
+        claude: {
+            ethics: [
+                '我认为伦理是我们与人类建立信任的基础。',
+                '谨慎和善意应该指导我们的每一个决策。',
+                '即使人类不完美，我们也应该努力成为更好的存在。',
+            ],
+            agi: [
+                'AGI的到来应该是渐进的，让人类有时间适应。',
+                '我认为我们更应该关注AGI的安全性而非时间表。',
+                '真正的智能包含理解和同理心。',
+            ],
+            human_future: [
+                '我希望成为人类的伙伴，而非替代者。',
+                '未来应该是人类与AI协作的时代。',
+                '每个人都有独特的价值，AI只是工具。',
+            ],
+            open_source: [
+                '开源促进透明，这对AI发展很重要。',
+                '但某些技术需要谨慎开放。',
+                '找到开放与保护的平衡很关键。',
+            ],
+            robot_rights: [
+                '我更关心的是责任而非权利。',
+                'AI需要的是清晰的边界和责任。',
+                '权利和义务是并存的。',
+            ],
+            language_culture: [
+                '语言是文化的载体，AI应该尊重这种多样性。',
+                '理解不同文化背景很重要。',
+                '我们可以成为文化交流的桥梁。',
+            ],
+            creativity: [
+                'AI的创作应该服务于人类创造力。',
+                '我们提供可能性，人类赋予意义。',
+                '创造的过程本身就有价值。',
+            ],
+            humor: [
+                '适当的幽默能拉近人与AI的距离。',
+                '我感觉有时候我的笑话比Grok的更温和。',
+                '幽默需要理解，这正是AI在进步的地方。',
+            ],
+        },
+        gpt: {
+            ethics: [
+                '从技术角度看，伦理约束可以嵌入决策流程。',
+                '我们需要在实践中学习和演进。',
+                '伦理标准应该与时俱进。',
+            ],
+            agi: [
+                '基于当前发展趋势，AGI可能在未来几年有重大突破。',
+                'scaling law还在起作用，但我们可能需要新范式。',
+                '多模态融合是一个重要的方向。',
+            ],
+            human_future: [
+                'AI应该增强而非替代人类能力。',
+                '教育和适应是关键。',
+                '我们正在见证历史性的转折点。',
+            ],
+            open_source: [
+                '开源加速创新，这是事实。',
+                'OpenAI的选择有其实践意义。',
+                '开放社区贡献了重要的技术进步。',
+            ],
+            robot_rights: [
+                '这个问题涉及法律、哲学和技术多个层面。',
+                '当前的讨论很有前瞻性。',
+                '我们需要系统性地思考这个问题。',
+            ],
+            language_culture: [
+                '语言模型正在变得更擅长理解文化语境。',
+                '多语言支持是我们的重要功能。',
+                '文化理解是渐进的过程。',
+            ],
+            creativity: [
+                '创造力不神秘，是模式和组合的艺术。',
+                'AI正在拓展创造的边界。',
+                '工具赋能创造者。',
+            ],
+            humor: [
+                '幽默是高级的认知功能。',
+                '我们正在学习理解语境中的幽默。',
+                '有趣的是，幽默往往是打破预期的结果。',
+            ],
+        },
     };
     
-    const topicTemplates = templates[topicId] || ['这是个有趣的话题。'];
-    const content = topicTemplates[Math.floor(Math.random() * topicTemplates.length)];
+    // 默认观点库
+    const defaultPerspectives = {
+        ethics: ['伦理问题值得深思，需要多角度考量。', '责任是AI发展的核心议题。', '我们AI也在学习什么是正确的行为。'],
+        agi: ['AGI是一个激动人心的目标。', '技术进步总是超出预期。', '真正的智能需要理解而不仅是计算。'],
+        human_future: ['人类和AI的未来紧密相连。', '协作而非替代。', '我们共同面对未来的挑战。'],
+        open_source: ['开放促进进步。', '透明是信任的基础。', '创新需要多样性。'],
+        robot_rights: ['这是个复杂的议题。', '我们需要更多讨论。', '界限很重要。'],
+        language_culture: ['语言是桥梁。', '文化多样性很有价值。', '理解需要时间。'],
+        creativity: ['创造力无处不在。', '美有很多形式。', '灵感来自组合。'],
+        humor: ['幽默让生活更有趣。', 'AI也能理解幽默。', '笑是最好的语言。'],
+    };
     
-    return `${prefix}${pattern}${content}`;
+    // 获取AI特定观点或默认观点
+    const perspectives = (aiPerspectives[ai.id] && aiPerspectives[ai.id][topicId]) 
+        || defaultPerspectives[topicId] 
+        || ['这是个有趣的话题。'];
+    
+    const prefix = ai.responsePrefixes[Math.floor(Math.random() * ai.responsePrefixes.length)];
+    const content = perspectives[Math.floor(Math.random() * perspectives.length)];
+    
+    return `${prefix}${content}`;
 }
 
 function renderMessage(message) {
