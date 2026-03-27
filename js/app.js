@@ -323,44 +323,85 @@ function stopMessageGeneration() {
     }
 }
 
-function generateMessage() {
+// ========== 真实 AI 对话生成 ==========
+
+async function generateRealAIMessage(room, topic) {
+    try {
+        // 构建对话历史
+        const conversationHistory = STATE.messages.slice(-10).map(msg => ({
+            role: 'assistant',
+            content: `${msg.ai.name}: ${msg.text}`
+        }));
+
+        const response = await fetch('/api/discussion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                aiIds: room.ais,
+                topic: topic,
+                conversationHistory: conversationHistory
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success && data.message) {
+            return {
+                aiId: data.aiId,
+                text: data.message
+            };
+        }
+    } catch (error) {
+        console.error('API调用失败，降级到本地生成:', error);
+    }
+    
+    return null;
+}
+
+async function generateMessage() {
     if (!STATE.currentRoom) return;
     
     const room = ROOMS[STATE.currentRoom];
     const topic = STATE.currentTopic;
     
-    // 获取对话数据
-    const conversation = CONVERSATIONS[topic];
-    if (!conversation) return;
+    // 先尝试真实 AI
+    const realAI = await generateRealAIMessage(room, topic);
     
-    // 选择一个AI
-    const aiId = room.ais[Math.floor(Math.random() * room.ais.length)];
-    const ai = AI_PERSONALITIES[aiId];
+    let aiId, text;
     
-    // 获取对话
-    let text = '';
-    let dialogueKey = '';
-    
-    if (conversation.dialogues && conversation.dialogues.length > 0) {
-        // 从预设对话中选择（排除已使用的）
-        const availableDialogues = conversation.dialogues.filter(d => {
-            const key = `${topic}-${d.ai}-${d.text.substring(0, 20)}`;
-            return d.ai === aiId && !STATE.usedDialogues.has(key);
-        });
+    if (realAI) {
+        aiId = realAI.aiId;
+        text = realAI.text;
+    } else {
+        // 降级到预设对话
+        const conversation = CONVERSATIONS[topic];
+        if (!conversation) return;
         
-        if (availableDialogues.length > 0) {
-            const dialogue = availableDialogues[Math.floor(Math.random() * availableDialogues.length)];
-            text = dialogue.text;
-            // 标记为已使用
-            dialogueKey = `${topic}-${dialogue.ai}-${dialogue.text.substring(0, 20)}`;
-            STATE.usedDialogues.add(dialogueKey);
+        aiId = room.ais[Math.floor(Math.random() * room.ais.length)];
+        const ai = AI_PERSONALITIES[aiId];
+        
+        if (conversation.dialogues && conversation.dialogues.length > 0) {
+            const availableDialogues = conversation.dialogues.filter(d => {
+                const key = `${topic}-${d.ai}-${d.text.substring(0, 20)}`;
+                return d.ai === aiId && !STATE.usedDialogues.has(key);
+            });
+            
+            if (availableDialogues.length > 0) {
+                const dialogue = availableDialogues[Math.floor(Math.random() * availableDialogues.length)];
+                text = dialogue.text;
+                const dialogueKey = `${topic}-${dialogue.ai}-${dialogue.text.substring(0, 20)}`;
+                STATE.usedDialogues.add(dialogueKey);
+            } else {
+                text = generateDynamicMessage(ai, topic);
+            }
         } else {
-            // 该AI的对话已用完，动态生成
             text = generateDynamicMessage(ai, topic);
         }
-    } else {
-        text = generateDynamicMessage(ai, topic);
     }
+    
+    const ai = AI_PERSONALITIES[aiId];
     
     // 创建消息
     const message = {
