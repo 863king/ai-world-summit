@@ -134,7 +134,19 @@ function renderTopics() {
         const card = document.createElement('div');
         card.className = 'topic-card';
         
-        const roomCount = Object.values(ROOMS).filter(r => r.topics.includes(topic.id)).length;
+        // 找到正在讨论该话题的会议厅
+        const roomsWithTopic = Object.values(ROOMS).filter(r => r.topics.includes(topic.id));
+        
+        // 点击后进入第一个讨论该话题的会议厅
+        card.onclick = () => {
+            if (roomsWithTopic.length > 0) {
+                const room = roomsWithTopic[0];
+                STATE.currentTopic = topic.id;
+                enterRoom(room.id);
+            }
+        };
+        
+        const roomCount = roomsWithTopic.length;
         
         card.innerHTML = `
             <div class="flex items-center gap-3">
