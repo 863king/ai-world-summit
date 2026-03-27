@@ -25,6 +25,7 @@
 
 /* ========== 首页背景效果 ========== */
 .hero-bg {
+    pointer-events: none;
     background: linear-gradient(135deg, 
         #0a0a0a 0%, 
         #1a1a2e 25%, 
@@ -43,6 +44,7 @@
 
 /* 赛博网格背景 */
 .cyber-grid {
+    pointer-events: none;
     position: absolute;
     inset: 0;
     background-image: 
@@ -59,6 +61,7 @@
 
 /* 粒子效果 */
 .particle-field {
+    pointer-events: none;
     position: absolute;
     inset: 0;
     overflow: hidden;
